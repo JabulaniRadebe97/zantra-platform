@@ -89,11 +89,12 @@ const showDashboard = async (user) => {
     | Role: ${profile.role}
   `;
 
-  if (profile.role === "creator") {
-    document.getElementById("creatorPanel").style.display = "block";
-  } else {
-    document.getElementById("creatorPanel").style.display = "none";
-  }
+  document.getElementById("creatorPanel").style.display =
+  profile.role === "creator" ? "block" : "none";
+
+document.getElementById("adminPanel").style.display =
+  profile.role === "admin" ? "block" : "none";
+
 
   loadPosts();
 };
@@ -157,5 +158,21 @@ const loadPosts = async () => {
     postsDiv.appendChild(div);
   });
 };
+document.getElementById("loadUsersBtn").addEventListener("click", async () => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, email, role, created_at");
+
+  const usersDiv = document.getElementById("usersList");
+  usersDiv.innerHTML = "";
+
+  data.forEach(user => {
+    const div = document.createElement("div");
+    div.style.borderBottom = "1px solid #ddd";
+    div.style.padding = "6px";
+    div.innerText = `${user.email} | ${user.role}`;
+    usersDiv.appendChild(div);
+  });
+});
 
 
