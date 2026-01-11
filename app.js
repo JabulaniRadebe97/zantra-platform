@@ -17,7 +17,16 @@ const showDashboard = async (user) => {
     Logged in as: ${profile.email}
     | Role: ${profile.role}
   `;
+
+  if (profile.role === "creator") {
+    document.getElementById("creatorPanel").style.display = "block";
+  } else {
+    document.getElementById("creatorPanel").style.display = "none";
+  }
+
+  loadPosts();
 };
+
 
 const userEmailText = document.getElementById("userEmail");
 
