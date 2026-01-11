@@ -15,17 +15,26 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
   const email = document.getElementById("signupEmail").value;
   const password = document.getElementById("signupPassword").value;
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password
   });
 
   if (error) {
     alert(error.message);
-  } else {
-    alert("Signup successful! You can now log in.");
+    return;
   }
+
+  // Create profile
+  await supabase.from("profiles").insert({
+    id: data.user.id,
+    email: email,
+    role: "viewer"
+  });
+
+  alert("Signup successful! You can now log in.");
 });
+
 
 // LOGIN
 document.getElementById("loginBtn").addEventListener("click", async () => {
