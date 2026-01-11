@@ -7,7 +7,18 @@ const supabase = createClient(
 
 // UI elements
 const authDiv = document.getElementById("auth");
-const dashboard = document.getElementById("dashboard");
+const showDashboard = async (user) => {
+  authDiv.style.display = "none";
+  dashboard.style.display = "block";
+
+  const profile = await loadUserProfile(user);
+
+  userEmailText.innerText = `
+    Logged in as: ${profile.email}
+    | Role: ${profile.role}
+  `;
+};
+
 const userEmailText = document.getElementById("userEmail");
 
 // SIGN UP
@@ -86,5 +97,14 @@ supabase.auth.onAuthStateChange((event, session) => {
     showAuth();
   }
 });
+const loadUserProfile = async (user) => {
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  return data;
+};
 
 
