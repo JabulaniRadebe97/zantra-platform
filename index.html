@@ -22,13 +22,23 @@
 
 <div id="dashboard" style="display:none;">
   <h2>Dashboard</h2>
-  <p id="userEmail"></p>
-  <button id="logoutBtn">Logout</button>
+<p id="userEmail"></p>
+
+<button id="logoutBtn">Logout</button>
+
+<div id="creatorPanel" style="display:none;">
   <hr />
-<p>Change Role (testing)</p>
-<button id="beCreatorBtn">Become Creator</button>
-<button id="beViewerBtn">Become Viewer</button>
+  <h3>Creator Panel</h3>
+  <textarea id="postContent" placeholder="Write something..."></textarea><br />
+  <button id="postBtn">Post</button>
 </div>
+
+<div id="feed">
+  <hr />
+  <h3>Feed</h3>
+  <div id="posts"></div>
+</div>
+
 
 <script src="app.js" type="module"></script>
 
