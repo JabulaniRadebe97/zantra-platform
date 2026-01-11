@@ -78,16 +78,26 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 });
 
 // SESSION HANDLING
-const showDashboard = (user) => {
+const showDashboard = async (user) => {
   authDiv.style.display = "none";
   dashboard.style.display = "block";
-  userEmailText.innerText = `Logged in as: ${user.email}`;
+
+  const profile = await loadUserProfile(user);
+
+  userEmailText.innerText = `
+    Logged in as: ${profile.email}
+    | Role: ${profile.role}
+  `;
+
+  if (profile.role === "creator") {
+    document.getElementById("creatorPanel").style.display = "block";
+  } else {
+    document.getElementById("creatorPanel").style.display = "none";
+  }
+
+  loadPosts();
 };
 
-const showAuth = () => {
-  authDiv.style.display = "block";
-  dashboard.style.display = "none";
-};
 
 // CHECK LOGIN STATE ON PAGE LOAD
 supabase.auth.getSession().then(({ data }) => {
@@ -115,25 +125,6 @@ const loadUserProfile = async (user) => {
 
   return data;
 };
-document.getElementById("beCreatorBtn").addEventListener("click", async () => {
-  const { data: session } = await supabase.auth.getSession();
-  await supabase
-    .from("profiles")
-    .update({ role: "creator" })
-    .eq("id", session.session.user.id);
-
-  location.reload();
-});
-
-document.getElementById("beViewerBtn").addEventListener("click", async () => {
-  const { data: session } = await supabase.auth.getSession();
-  await supabase
-    .from("profiles")
-    .update({ role: "viewer" })
-    .eq("id", session.session.user.id);
-
-  location.reload();
-});
 document.getElementById("postBtn").addEventListener("click", async () => {
   const content = document.getElementById("postContent").value;
 
