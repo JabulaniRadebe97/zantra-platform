@@ -134,5 +134,20 @@ document.getElementById("beViewerBtn").addEventListener("click", async () => {
 
   location.reload();
 });
+document.getElementById("postBtn").addEventListener("click", async () => {
+  const content = document.getElementById("postContent").value;
+
+  const { data: session } = await supabase.auth.getSession();
+
+  if (!content) return;
+
+  await supabase.from("posts").insert({
+    creator_id: session.session.user.id,
+    content: content
+  });
+
+  document.getElementById("postContent").value = "";
+  loadPosts();
+});
 
 
