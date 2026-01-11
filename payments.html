@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Buy Credits</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Buy Credits</h2>
+
+<p>
+  Credits are digital support units used within this platform.
+  Credits have no cash value and are not redeemable for cash at this time.
+</p>
+
+<!-- CREDIT PACKAGES -->
+<div>
+  <form action="https://www.payfast.co.za/eng/process" method="post">
+    <!-- PAYFAST DETAILS -->
+    <input type="hidden" name="merchant_id" value="122cafa3-69e0-4403-ad8e-362a6284ed44">
+    <input type="hidden" name="merchant_key" value="sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO">
+
+    <!-- RETURN URLS -->
+    <input type="hidden" name="return_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/success.html">
+    <input type="hidden" name="cancel_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/cancel.html">
+    <input type="hidden" name="notify_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/notify.html">
+
+    <!-- TRANSACTION DETAILS -->
+    <input type="hidden" name="amount" value="100.00">
+    <input type="hidden" name="item_name" value="100 Credits">
+
+    <!-- CUSTOMER DETAILS (OPTIONAL) -->
+    <input type="hidden" name="email_address" id="pf_email">
+
+    <button type="submit">Buy 100 Credits – R100</button>
+  </form>
+</div>
+
+<hr />
+
+<div>
+  <form action="https://www.payfast.co.za/eng/process" method="post">
+    <input type="hidden" name="merchant_id" value="122cafa3-69e0-4403-ad8e-362a6284ed44">
+    <input type="hidden" name="merchant_key" value="sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO">
+
+    <input type="hidden" name="return_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/success.html">
+    <input type="hidden" name="cancel_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/cancel.html">
+    <input type="hidden" name="notify_url" value="https://ihawjbayhwbfyeytgrhg.supabase.co/notify.html">
+
+    <input type="hidden" name="amount" value="200.00">
+    <input type="hidden" name="item_name" value="200 Credits">
+
+    <button type="submit">Buy 200 Credits – R200</button>
+  </form>
+</div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    "https://ihawjbayhwbfyeytgrhg.supabase.co",
+    "sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO"
+  );
+
+  // Auto-fill email if logged in
+  supabase.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      document.getElementById("pf_email").value =
+        data.session.user.email;
+    }
+  });
+</script>
+
+</body>
+</html>
