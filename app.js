@@ -106,5 +106,24 @@ const loadUserProfile = async (user) => {
 
   return data;
 };
+document.getElementById("beCreatorBtn").addEventListener("click", async () => {
+  const { data: session } = await supabase.auth.getSession();
+  await supabase
+    .from("profiles")
+    .update({ role: "creator" })
+    .eq("id", session.session.user.id);
+
+  location.reload();
+});
+
+document.getElementById("beViewerBtn").addEventListener("click", async () => {
+  const { data: session } = await supabase.auth.getSession();
+  await supabase
+    .from("profiles")
+    .update({ role: "viewer" })
+    .eq("id", session.session.user.id);
+
+  location.reload();
+});
 
 
