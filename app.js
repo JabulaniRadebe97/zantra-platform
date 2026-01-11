@@ -154,10 +154,22 @@ const loadPosts = async () => {
     const div = document.createElement("div");
     div.style.padding = "10px";
     div.style.borderBottom = "1px solid #ccc";
-    div.innerText = post.content;
+
+    const content = document.createElement("p");
+    content.innerText = post.content;
+
+    const reportBtn = document.createElement("button");
+    reportBtn.innerText = "Report";
+    reportBtn.style.marginTop = "5px";
+
+    reportBtn.onclick = () => reportPost(post.id);
+
+    div.appendChild(content);
+    div.appendChild(reportBtn);
     postsDiv.appendChild(div);
   });
 };
+
 document.getElementById("loadUsersBtn").addEventListener("click", async () => {
   const { data } = await supabase
     .from("profiles")
@@ -172,6 +184,78 @@ document.getElementById("loadUsersBtn").addEventListener("click", async () => {
     div.style.padding = "6px";
     div.innerText = `${user.email} | ${user.role}`;
     usersDiv.appendChild(div);
+  });
+});
+const reportPost = async (postId) => {
+  const reason = prompt("Why are you reporting this content?");
+  if (!reason) return;
+
+  const { data: session } = await supabase.auth.getSession();
+
+  await supabase.from("reports").insert({
+    post_id: postId,
+    reporter_id: session.session.user.id,
+    reason: reason
+  });
+
+  alert("Report submitted. Thank you.");
+};
+document.getElementById("loadReportsBtn").addEventListener("click", async () => {
+  const { data } = await supabase
+    .from("reports")
+    .select(`
+      id,
+      reason,
+      created_at,
+      posts ( content )
+    `)
+    .order("created_at", { ascending: false });
+
+  const reportsDiv = document.getElementById("reportsList");
+  reportsDiv.innerHTML = "";
+
+  data.forEach(r => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "8px";
+    div.style.marginBottom = "6px";
+
+    div.innerHTML = `
+      <p><strong>Reported Content:</strong> ${r.posts.content}</p>
+      <p><strong>Reason:</strong> ${r.reason}</p>
+      <button onclick="deletePost('${r.posts.id}')">Delete Post</button>
+    `;
+
+    reportsDiv.appendChild(div);
+  });
+});
+document.getElementById("loadReportsBtn").addEventListener("click", async () => {
+  const { data } = await supabase
+    .from("reports")
+    .select(`
+      id,
+      reason,
+      created_at,
+      posts ( content )
+    `)
+    .order("created_at", { ascending: false });
+
+  const reportsDiv = document.getElementById("reportsList");
+  reportsDiv.innerHTML = "";
+
+  data.forEach(r => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ccc";
+    div.style.padding = "8px";
+    div.style.marginBottom = "6px";
+
+    div.innerHTML = `
+      <p><strong>Reported Content:</strong> ${r.posts.content}</p>
+      <p><strong>Reason:</strong> ${r.reason}</p>
+      <button onclick="deletePost('${r.posts.id}')">Delete Post</button>
+    `;
+
+    reportsDiv.appendChild(div);
   });
 });
 
