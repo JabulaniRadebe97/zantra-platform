@@ -1,0 +1,78 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: #f5f5f5;
+  margin: 0;
+  padding: 20px;
+}
+
+h1, h2, h3 {
+  color: #222;
+}
+
+#auth, #dashboard {
+  background: #ffffff;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto 20px auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+button:hover {
+  background: #1e4fd8;
+}
+
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+#feed div,
+#adminPosts div {
+  background: #fafafa;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+#creatorPanel,
+#adminPanel {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+}
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 40px;
+}
