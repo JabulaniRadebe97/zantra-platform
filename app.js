@@ -1,8 +1,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(
-  "ihawjbayhwbfyeytgrhg",
-  "ihawjbayhwbfyeytgrhg"
+  https://ihawjbayhwbfyeytgrhg.supabase.co
+  sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO
 );
 
 // UI elements
