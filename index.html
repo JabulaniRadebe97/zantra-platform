@@ -2,55 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>Zantra · Live Adult Creators</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Creator Platform</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>Creator Platform</h1>
-
-  <!-- AUTH -->
-  <div id="auth">
-    <h2>Sign Up / Login</h2>
-    <input id="email" type="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
-    <button id="signupBtn">Sign Up</button>
-    <button id="loginBtn">Login</button>
+<header class="topbar">
+  <div class="brand">
+    <img src="logo.png" alt="Zantra Logo" class="logo">
+    <span class="brand-name">ZANTRA</span>
   </div>
-
-  <!-- DASHBOARD -->
-  <div id="dashboard" style="display:none;">
-    <p id="userInfo"></p>
-    <button id="logoutBtn">Logout</button>
-
-    <!-- CREATOR PANEL -->
-    <div id="creatorPanel" style="display:none;">
-      <h3>Create Post</h3>
-      <textarea id="postContent" placeholder="Write something..."></textarea>
-      <button id="postBtn">Post</button>
-    </div>
-
-    <!-- FEED -->
-    <h3>Feed</h3>
-    <div id="feed"></div>
-
-    <!-- ADMIN PANEL -->
-    <div id="adminPanel" style="display:none;">
-      <h3>Admin Panel</h3>
-      <button id="loadPostsBtn">Load All Posts</button>
-      <div id="adminPosts"></div>
-    </div>
+  <div class="actions">
+    <a href="dashboard.html" class="btn">Login / Sign Up</a>
   </div>
+</header>
 
-  <!-- LEGAL FOOTER -->
-  <footer>
-    <p>
-      Credits are digital support units used within this platform.
-      Credits have no cash value and are not redeemable for cash at this time.
-    </p>
-  </footer>
+<section class="hero">
+  <h1>Unfiltered. Live. Real.</h1>
+  <p>Support independent adult creators directly.</p>
+  <a href="dashboard.html" class="btn primary">Enter Zantra</a>
+</section>
 
-  <script type="module" src="app.js"></script>
+<section class="feed-section">
+  <h2>Live & Trending Creators</h2>
+  <div id="feed" class="feed-grid">
+    <p class="empty">No creators live yet.</p>
+  </div>
+</section>
+
+<footer>
+  <p>18+ Adult Content Only · Zantra Platform</p>
+  <p>Credits are digital support units and not cash.</p>
+</footer>
+
+<script type="module" src="app.js"></script>
 </body>
 </html>
