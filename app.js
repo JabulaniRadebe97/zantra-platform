@@ -149,5 +149,22 @@ document.getElementById("postBtn").addEventListener("click", async () => {
   document.getElementById("postContent").value = "";
   loadPosts();
 });
+const loadPosts = async () => {
+  const { data } = await supabase
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  const postsDiv = document.getElementById("posts");
+  postsDiv.innerHTML = "";
+
+  data.forEach(post => {
+    const div = document.createElement("div");
+    div.style.padding = "10px";
+    div.style.borderBottom = "1px solid #ccc";
+    div.innerText = post.content;
+    postsDiv.appendChild(div);
+  });
+};
 
 
