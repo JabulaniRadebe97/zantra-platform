@@ -22,7 +22,7 @@
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-const supabase = createClient("YOUR_SUPABASE_URL","YOUR_SUPABASE_ANON_KEY");
+const supabase = createClient("https://ihawjbayhwbfyeytgrhg.supabase.co","sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO");
 
 const params = new URLSearchParams(location.search);
 const creatorId = params.get("id");
@@ -38,5 +38,15 @@ async function loadProfile() {
 }
 loadProfile();
 </script>
+<script type="module">
+  // Import Supabase (if not already imported)
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  const supabase = createClient("https://ihawjbayhwbfyeytgrhg.supabase.co", "sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO");
+
+  const subscribeBtn = document.getElementById("subscribeBtn");
+
+  subscribeBtn.onclick = async () => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.s
 </body>
 </html>
