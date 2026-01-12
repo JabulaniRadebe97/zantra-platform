@@ -1,78 +1,29 @@
-* {
-  box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 body {
-  background: #f5f5f5;
-  margin: 0;
-  padding: 20px;
+  background: #0b0b0f;
+  color: #e5e5e5;
 }
 
-h1, h2, h3 {
-  color: #222;
+h1, h2, h3, strong {
+  color: #ffffff;
 }
 
-#auth, #dashboard {
-  background: #ffffff;
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto 20px auto;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-textarea {
-  min-height: 80px;
-  resize: vertical;
+.card, #auth, #dashboard {
+  background: #14141a;
+  border: 1px solid #222;
 }
 
 button {
-  padding: 10px 14px;
-  border: none;
-  border-radius: 4px;
-  background: #2563eb;
-  color: #ffffff;
-  cursor: pointer;
-  margin-right: 5px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
 }
 
-button:hover {
-  background: #1e4fd8;
-}
-
-button:disabled {
-  background: #999;
-  cursor: not-allowed;
-}
-
-#feed div,
-#adminPosts div {
-  background: #fafafa;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-#creatorPanel,
-#adminPanel {
-  margin-top: 20px;
-  padding-top: 10px;
-  border-top: 1px solid #ddd;
+.feed-card {
+  background: #18181f;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #2a2a33;
 }
 
 footer {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin-top: 40px;
+  color: #888;
 }
