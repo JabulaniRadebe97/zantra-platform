@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Profile · Zantra</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dash-wrap">
+
+  <h2>Edit Your Creator Profile</h2>
+
+  <div class="card">
+    <label>Display Name</label>
+    <input id="displayName" placeholder="Your stage name">
+
+    <label>Bio</label>
+    <textarea id="bio" placeholder="Tell fans about yourself…"></textarea>
+
+    <label>Avatar Image URL</label>
+    <input id="avatarUrl" placeholder="https://">
+
+    <label>Banner Image URL</label>
+    <input id="bannerUrl" placeholder="https://">
+
+    <button id="saveBtn">Save Profile</button>
+    <p id="status"></p>
+  </div>
+
+  <p style="margin-top:20px;">
+    <a href="dashboard.html">← Back to Dashboard</a>
+  </p>
+
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "YOUR_SUPABASE_URL",
+  "YOUR_SUPABASE_ANON_KEY"
+);
+
+const displayName = document.getElementById("displayName");
+const bio = document.getElementById("bio");
+const avatarUrl = document.getElementById("avatarUrl");
+const bannerUrl = document.getElementById("bannerUrl");
+const status = document.getElementById("status");
+
+async function loadProfile() {
+  const { data: session } = await supabase.auth.getSession();
+  if (!session.session) {
+    location.href = "/";
+    return;
+  }
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", session.session.user.id)
+    .single();
+
+  displayName.value = data.display_name || "";
+  bio.value = data.bio || "";
+  avatarUrl.value = data.avatar_url || "";
+  bannerUrl.value = data.banner_url || "";
+}
+
+document.getElementById("saveBtn").onclick = async () => {
+  const { data: session } = await supabase.auth.getSession();
+
+  await supabase.from("profiles").update({
+    display_name: displayName.value,
+    bio: bio.value,
+    avatar_url: avatarUrl.value,
+    banner_url: bannerUrl.value
+  }).eq("id", session.session.user.id);
+
+  status.innerText = "Profile updated successfully.";
+};
+
+loadProfile();
+</script>
+
+</body>
+</html>
