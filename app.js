@@ -13,160 +13,108 @@ const supabase = createClient(
 ========================= */
 const authDiv = document.getElementById("auth");
 const dashboardDiv = document.getElementById("dashboard");
-
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-
-const signupBtn = document.getElementById("signupBtn");
-const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
-
 const userInfo = document.getElementById("userInfo");
-
 const creatorPanel = document.getElementById("creatorPanel");
-const postContent = document.getElementById("postContent");
 const postBtn = document.getElementById("postBtn");
-
+const postContent = document.getElementById("postContent");
 const feedDiv = document.getElementById("feed");
-
 const adminPanel = document.getElementById("adminPanel");
 const loadPostsBtn = document.getElementById("loadPostsBtn");
 const adminPostsDiv = document.getElementById("adminPosts");
 
-/* =========================
-   AUTH ACTIONS
-========================= */
-signupBtn.onclick = async () => {
-  const { data, error } = await supabase.auth.signUp({
-    email: emailInput.value,
-    password: passwordInput.value
-  });
+let currentProfile = null;
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  // Create profile
-  await supabase.from("profiles").insert({
-    id: data.user.id,
-    role: "viewer",
-    tokens: 100
-  });
-
-  alert("Signup successful. You can now log in.");
-};
-
-loginBtn.onclick = async () => {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value
-  });
-
-  if (error) alert(error.message);
-};
-
+/* AUTH */
 logoutBtn.onclick = async () => {
   await supabase.auth.signOut();
+  location.href = "/";
 };
 
-/* =========================
-   SESSION HANDLING
-========================= */
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (session) {
-    authDiv.style.display = "none";
-    dashboardDiv.style.display = "block";
-    await loadUser(session.user);
-    await loadFeed();
-  } else {
-    authDiv.style.display = "block";
-    dashboardDiv.style.display = "none";
+supabase.auth.onAuthStateChange(async (_, session) => {
+  if (!session) {
+    location.href = "/";
+    return;
   }
+  await loadProfile(session.user.id);
+  await loadFeed();
 });
 
-/* =========================
-   LOAD USER & ROLE
-========================= */
-async function loadUser(user) {
+/* PROFILE */
+async function loadProfile(userId) {
   const { data } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
-  userInfo.innerText = `Logged in as ${user.email} | Role: ${data.role} | Tokens: ${data.tokens}`;
+  currentProfile = data;
+
+  userInfo.innerText =
+    `Logged in | Role: ${data.role} | Credits: ${data.tokens}`;
 
   creatorPanel.style.display = data.role === "creator" ? "block" : "none";
   adminPanel.style.display = data.role === "admin" ? "block" : "none";
 }
 
-/* =========================
-   POSTS
-========================= */
+/* POSTS */
 postBtn.onclick = async () => {
-  const content = postContent.value.trim();
-  if (!content) return;
-
-  const { data: session } = await supabase.auth.getSession();
+  if (!postContent.value.trim()) return;
 
   await supabase.from("posts").insert({
-    creator_id: session.session.user.id,
-    content
+    creator_id: currentProfile.id,
+    content: postContent.value.trim()
   });
 
   postContent.value = "";
   await loadFeed();
 };
 
+/* FEED */
 async function loadFeed() {
   const { data } = await supabase
     .from("posts")
-    .select("id, content, creator_id, created_at")
+    .select(`
+      id,
+      content,
+      creator_id,
+      created_at,
+      profiles ( role )
+    `)
     .order("created_at", { ascending: false });
 
   feedDiv.innerHTML = "";
 
   if (!data || data.length === 0) {
-    feedDiv.innerText = "No posts yet.";
+    feedDiv.innerHTML = "<p>No creator content yet.</p>";
     return;
   }
 
   data.forEach(post => {
-    const div = document.createElement("div");
+    const card = document.createElement("div");
+    card.className = "feed-card";
 
-    const p = document.createElement("p");
-    p.innerText = post.content;
+    card.innerHTML = `
+      <strong>Creator</strong>
+      <p>${post.content}</p>
+      <button class="tip">Tip 10 Credits</button>
+    `;
 
-    const tipBtn = document.createElement("button");
-    tipBtn.innerText = "Tip 10 Credits";
-    tipBtn.onclick = () => tipCreator(post.creator_id);
+    card.querySelector(".tip").onclick = () =>
+      tipCreator(post.creator_id);
 
-    div.appendChild(p);
-    div.appendChild(tipBtn);
-    feedDiv.appendChild(div);
+    feedDiv.appendChild(card);
   });
 }
 
-/* =========================
-   TIPPING LOGIC
-========================= */
+/* TIPPING */
 async function tipCreator(creatorId) {
-  const { data: session } = await supabase.auth.getSession();
-  const userId = session.session.user.id;
-
-  if (creatorId === userId) {
+  if (creatorId === currentProfile.id) {
     alert("You cannot tip yourself.");
     return;
   }
 
-  const { data: sender } = await supabase
-    .from("profiles")
-    .select("tokens")
-    .eq("id", userId)
-    .single();
-
-  if (sender.tokens < 10) {
+  if (currentProfile.tokens < 10) {
     alert("Not enough credits.");
     return;
   }
@@ -177,45 +125,41 @@ async function tipCreator(creatorId) {
     .eq("id", creatorId)
     .single();
 
-  await supabase.from("profiles").update({ tokens: sender.tokens - 10 }).eq("id", userId);
-  await supabase.from("profiles").update({ tokens: receiver.tokens + 10 }).eq("id", creatorId);
+  await supabase.from("profiles")
+    .update({ tokens: currentProfile.tokens - 10 })
+    .eq("id", currentProfile.id);
+
+  await supabase.from("profiles")
+    .update({ tokens: receiver.tokens + 10 })
+    .eq("id", creatorId);
 
   await supabase.from("transactions").insert({
-    from_user: userId,
+    from_user: currentProfile.id,
     to_user: creatorId,
     amount: 10
   });
 
-  await loadUser(session.session.user);
-  alert("Tip sent!");
+  await loadProfile(currentProfile.id);
+  alert("Tip sent.");
 }
 
-/* =========================
-   ADMIN ACTIONS
-========================= */
+/* ADMIN */
 loadPostsBtn.onclick = async () => {
-  const { data } = await supabase
-    .from("posts")
-    .select("id, content, created_at");
+  const { data } = await supabase.from("posts").select("*");
 
   adminPostsDiv.innerHTML = "";
 
   data.forEach(post => {
     const div = document.createElement("div");
-
-    const p = document.createElement("p");
-    p.innerText = post.content;
-
-    const del = document.createElement("button");
-    del.innerText = "Delete";
-    del.onclick = async () => {
+    div.innerHTML = `
+      <p>${post.content}</p>
+      <button>Delete</button>
+    `;
+    div.querySelector("button").onclick = async () => {
       await supabase.from("posts").delete().eq("id", post.id);
       await loadFeed();
       loadPostsBtn.click();
     };
-
-    div.appendChild(p);
-    div.appendChild(del);
     adminPostsDiv.appendChild(div);
   });
 };
