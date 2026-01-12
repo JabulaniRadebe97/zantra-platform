@@ -21,17 +21,10 @@ const adminPanel = document.getElementById("adminPanel");
 const loadPostsBtn = document.getElementById("loadPostsBtn");
 const adminPostsDiv = document.getElementById("adminPosts");
 
-/* =========================
-   STATE
-========================= */
-let currentProfile = null;
-let heartbeatInterval = null;
+let profile = null;
 
-/* =========================
-   AUTH & SESSION
-========================= */
+/* AUTH */
 logoutBtn?.addEventListener("click", async () => {
-  await setOffline();
   await supabase.auth.signOut();
   location.href = "/";
 });
@@ -41,188 +34,84 @@ supabase.auth.onAuthStateChange(async (_, session) => {
     location.href = "/";
     return;
   }
-
   await loadProfile(session.user.id);
-  await setOnline();
-  startHeartbeat();
   await loadFeed();
 });
 
-/* =========================
-   PROFILE
-========================= */
-async function loadProfile(userId) {
+/* PROFILE */
+async function loadProfile(id) {
   const { data } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("id", id)
     .single();
 
-  currentProfile = data;
+  profile = data;
+  userInfo.innerText = `Role: ${data.role} | Credits: ${data.tokens}`;
 
-  if (userInfo) {
-    userInfo.innerText =
-      `Logged in · Role: ${data.role} · Credits: ${data.tokens}`;
-  }
-
-  if (creatorPanel) {
-    creatorPanel.style.display =
-      data.role === "creator" ? "block" : "none";
-  }
-
-  if (adminPanel) {
-    adminPanel.style.display =
-      data.role === "admin" ? "block" : "none";
-  }
+  creatorPanel.style.display = data.role === "creator" ? "block" : "none";
+  adminPanel.style.display = data.role === "admin" ? "block" : "none";
 }
 
-/* =========================
-   LIVE STATUS
-========================= */
-async function setOnline() {
-  if (!currentProfile) return;
-
-  await supabase.from("profiles").update({
-    is_online: true,
-    last_seen: new Date().toISOString()
-  }).eq("id", currentProfile.id);
-}
-
-async function setOffline() {
-  if (!currentProfile) return;
-
-  await supabase.from("profiles").update({
-    is_online: false,
-    last_seen: new Date().toISOString()
-  }).eq("id", currentProfile.id);
-}
-
-function startHeartbeat() {
-  if (heartbeatInterval) clearInterval(heartbeatInterval);
-
-  heartbeatInterval = setInterval(async () => {
-    if (!currentProfile) return;
-
-    await supabase.from("profiles").update({
-      last_seen: new Date().toISOString()
-    }).eq("id", currentProfile.id);
-  }, 120000); // every 2 minutes
-}
-
-/* Browser close / refresh */
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon(
-    "/api/offline",
-    JSON.stringify({ user: currentProfile?.id })
-  );
-});
-
-/* =========================
-   POSTS
-========================= */
+/* POST */
 postBtn?.addEventListener("click", async () => {
-  if (!postContent.value.trim()) return;
+  const content = postContent.value.trim();
+  if (!content) return;
+
+  const visibility =
+    document.querySelector("input[name='visibility']:checked").value;
 
   await supabase.from("posts").insert({
-    creator_id: currentProfile.id,
-    content: postContent.value.trim()
+    creator_id: profile.id,
+    content,
+    visibility
   });
 
   postContent.value = "";
   await loadFeed();
 });
 
-/* =========================
-   FEED (WITH LIVE BADGE)
-========================= */
+/* FEED */
 async function loadFeed() {
-  const { data } = await supabase
+  const { data: posts } = await supabase
     .from("posts")
-    .select(`
-      id,
-      content,
-      created_at,
-      creator_id,
-      profiles (
-        display_name,
-        is_online
-      )
-    `)
+    .select("*, profiles(display_name)")
     .order("created_at", { ascending: false });
 
-  if (!feedDiv) return;
   feedDiv.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    feedDiv.innerHTML = "<p>No creator content yet.</p>";
-    return;
-  }
+  for (const post of posts) {
+    if (post.visibility === "subscriber") {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("subscriber", profile.id)
+        .eq("creator", post.creator_id)
+        .single();
 
-  data.forEach(post => {
-    const card = document.createElement("div");
-    card.className = "feed-card";
+      if (!sub) continue;
+    }
 
-    const liveBadge = post.profiles?.is_online
-      ? `<span style="color:#22c55e;font-weight:bold;">● LIVE</span>`
-      : `<span style="color:#888;">Offline</span>`;
+    const div = document.createElement("div");
+    div.className = "feed-card";
 
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;">
-        <strong>${post.profiles?.display_name || "Creator"}</strong>
-        ${liveBadge}
-      </div>
+    div.innerHTML = `
+      <strong>${post.profiles?.display_name || "Creator"}</strong>
       <p>${post.content}</p>
-      <button class="tip">Tip 10 Credits</button>
+      ${post.visibility === "subscriber"
+        ? "<small>🔒 Subscribers only</small>"
+        : ""}
     `;
 
-    card.querySelector(".tip").onclick = () =>
-      tipCreator(post.creator_id);
-
-    feedDiv.appendChild(card);
-  });
-}
-
-/* =========================
-   TIPPING
-========================= */
-async function tipCreator(creatorId) {
-  if (creatorId === currentProfile.id) {
-    alert("You cannot tip yourself.");
-    return;
+    feedDiv.appendChild(div);
   }
 
-  if (currentProfile.tokens < 10) {
-    alert("Not enough credits.");
-    return;
+  if (feedDiv.innerHTML === "") {
+    feedDiv.innerHTML = "<p>No posts available.</p>";
   }
-
-  const { data: receiver } = await supabase
-    .from("profiles")
-    .select("tokens")
-    .eq("id", creatorId)
-    .single();
-
-  await supabase.from("profiles")
-    .update({ tokens: currentProfile.tokens - 10 })
-    .eq("id", currentProfile.id);
-
-  await supabase.from("profiles")
-    .update({ tokens: receiver.tokens + 10 })
-    .eq("id", creatorId);
-
-  await supabase.from("transactions").insert({
-    from_user: currentProfile.id,
-    to_user: creatorId,
-    amount: 10
-  });
-
-  await loadProfile(currentProfile.id);
-  alert("Tip sent.");
 }
 
-/* =========================
-   ADMIN
-========================= */
+/* ADMIN */
 loadPostsBtn?.addEventListener("click", async () => {
   const { data } = await supabase.from("posts").select("*");
   adminPostsDiv.innerHTML = "";
@@ -233,13 +122,11 @@ loadPostsBtn?.addEventListener("click", async () => {
       <p>${post.content}</p>
       <button>Delete</button>
     `;
-
     div.querySelector("button").onclick = async () => {
       await supabase.from("posts").delete().eq("id", post.id);
       await loadFeed();
       loadPostsBtn.click();
     };
-
     adminPostsDiv.appendChild(div);
   });
 });

@@ -3,50 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <title>Creator Profile · Zantra</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="profile-wrap">
+
   <img id="banner" class="banner">
+
   <div class="profile-card">
     <img id="avatar" class="avatar">
     <h2 id="name"></h2>
     <p id="bio"></p>
+
     <button id="subscribeBtn">Subscribe · 100 Credits</button>
+    <p id="subStatus"></p>
   </div>
 
   <h3>Posts</h3>
   <div id="feed"></div>
+
 </div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-const supabase = createClient("https://ihawjbayhwbfyeytgrhg.supabase.co","sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO");
+
+const supabase = createClient(
+  "https://ihawjbayhwbfyeytgrhg.supabase.co",
+  "sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO"
+);
 
 const params = new URLSearchParams(location.search);
 const creatorId = params.get("id");
 
-async function loadProfile() {
-  const { data } = await supabase.from("profiles")
-    .select("*").eq("id", creatorId).single();
+const subscribeBtn = document.getElementById("subscribeBtn");
+const subStatus = document.getElementById("subStatus");
 
-  document.getElementById("name").innerText = data.display_name || "Creator";
-  document.getElementById("bio").innerText = data.bio || "";
-  document.getElementById("banner").src = data.banner_url || "default-banner.jpg";
-  document.getElementById("avatar").src = data.avatar_url || "default-avatar.jpg";
+let currentUser = null;
+
+/* LOAD SESSION */
+async function loadSession() {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    location.href = "/";
+    return;
+  }
+  currentUser = data.session.user;
 }
-loadProfile();
+
+/* LOAD PROFILE */
+async function loadProfile() {
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", creatorId)
+    .single();
+
+  document.getElementById("name").innerText =
+    data.display_name || "Creator";
+
+  document.getElementById("bio").innerText =
+    data.bio || "";
+
+  document.getElementById("banner").src =
+    data.banner_url || "default-banner.jpg";
+
+  document.getElementById("avatar").src =
+    data.avatar_url || "default-avatar.jpg";
+}
+
+/* CHECK SUBSCRIPTION */
+async function checkSubscription() {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("subscriber", currentUser.id)
+    .eq("creator", creatorId)
+    .single();
+
+  if (data) {
+    subscribeBtn.disabled = true;
+    subscribeBtn.innerText = "Subscribed";
+    subStatus.innerText = "You are subscribed to this creator.";
+    loadPosts(true);
+  } else {
+    loadPosts(false);
+  }
+}
+
+/* SUBSCRIBE */
+subscribeBtn.onclick = async () => {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tokens")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (profile.tokens < 100) {
+    subStatus.innerText = "Not enough credits.";
+    return;
+  }
+
+  // Deduct credits
+  await supabase.from("profiles")
+    .update({ tokens: profile.tokens - 100 })
+    .eq("id", currentUser.id);
+
+  // Insert subscription
+  await supabase.from("subscriptions").insert({
+    subscriber: currentUser.id,
+    creator: creatorId
+  });
+
+  subscribeBtn.disabled = true;
+  subscribeBtn.innerText = "Subscribed";
+  subStatus.innerText = "Subscription successful.";
+
+  loadPosts(true);
+};
+
+/* LOAD POSTS */
+async function loadPosts(hasAccess) {
+  const { data } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("creator_id", creatorId)
+    .order("created_at", { ascending: false });
+
+  const feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  if (!hasAccess) {
+    feed.innerHTML = "<p>Subscribe to view exclusive posts.</p>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    feed.innerHTML = "<p>No posts yet.</p>";
+    return;
+  }
+
+  data.forEach(post => {
+    const div = document.createElement("div");
+    div.className = "feed-card";
+    div.innerHTML = `<p>${post.content}</p>`;
+    feed.appendChild(div);
+  });
+}
+
+/* INIT */
+await loadSession();
+await loadProfile();
+await checkSubscription();
 </script>
-<script type="module">
-  // Import Supabase (if not already imported)
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-  const supabase = createClient("https://ihawjbayhwbfyeytgrhg.supabase.co", "sb_publishable_REKxzXBdaL9AHQzhUDv0-w_QRNk8XDO");
 
-  const subscribeBtn = document.getElementById("subscribeBtn");
-
-  subscribeBtn.onclick = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.s
 </body>
 </html>
