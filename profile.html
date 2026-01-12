@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creator Profile · Zantra</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="profile-wrap">
+  <img id="banner" class="banner">
+  <div class="profile-card">
+    <img id="avatar" class="avatar">
+    <h2 id="name"></h2>
+    <p id="bio"></p>
+    <button id="subscribeBtn">Subscribe · 100 Credits</button>
+  </div>
+
+  <h3>Posts</h3>
+  <div id="feed"></div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+const supabase = createClient("YOUR_SUPABASE_URL","YOUR_SUPABASE_ANON_KEY");
+
+const params = new URLSearchParams(location.search);
+const creatorId = params.get("id");
+
+async function loadProfile() {
+  const { data } = await supabase.from("profiles")
+    .select("*").eq("id", creatorId).single();
+
+  document.getElementById("name").innerText = data.display_name || "Creator";
+  document.getElementById("bio").innerText = data.bio || "";
+  document.getElementById("banner").src = data.banner_url || "default-banner.jpg";
+  document.getElementById("avatar").src = data.avatar_url || "default-avatar.jpg";
+}
+loadProfile();
+</script>
+</body>
+</html>
