@@ -11,8 +11,6 @@ const supabase = createClient(
 /* =========================
    ELEMENTS
 ========================= */
-const authDiv = document.getElementById("auth");
-const dashboardDiv = document.getElementById("dashboard");
 const logoutBtn = document.getElementById("logoutBtn");
 const userInfo = document.getElementById("userInfo");
 const creatorPanel = document.getElementById("creatorPanel");
@@ -23,26 +21,36 @@ const adminPanel = document.getElementById("adminPanel");
 const loadPostsBtn = document.getElementById("loadPostsBtn");
 const adminPostsDiv = document.getElementById("adminPosts");
 
+/* =========================
+   STATE
+========================= */
 let currentProfile = null;
+let heartbeatInterval = null;
 
-/* AUTH */
-logoutBtn.onclick = async () => {
+/* =========================
+   AUTH & SESSION
+========================= */
+logoutBtn?.addEventListener("click", async () => {
+  await setOffline();
   await supabase.auth.signOut();
   location.href = "/";
-  is_online = false;
-  last_seen= minute;
-};
+});
 
 supabase.auth.onAuthStateChange(async (_, session) => {
   if (!session) {
     location.href = "/";
     return;
   }
+
   await loadProfile(session.user.id);
+  await setOnline();
+  startHeartbeat();
   await loadFeed();
 });
 
-/* PROFILE */
+/* =========================
+   PROFILE
+========================= */
 async function loadProfile(userId) {
   const { data } = await supabase
     .from("profiles")
@@ -52,17 +60,67 @@ async function loadProfile(userId) {
 
   currentProfile = data;
 
-  userInfo.innerText =
-    `Logged in | Role: ${data.role} | Credits: ${data.tokens}`;
-    is_online = true;
-    last_seen= minute;
+  if (userInfo) {
+    userInfo.innerText =
+      `Logged in · Role: ${data.role} · Credits: ${data.tokens}`;
+  }
 
-  creatorPanel.style.display = data.role === "creator" ? "block" : "none";
-  adminPanel.style.display = data.role === "admin" ? "block" : "none";
+  if (creatorPanel) {
+    creatorPanel.style.display =
+      data.role === "creator" ? "block" : "none";
+  }
+
+  if (adminPanel) {
+    adminPanel.style.display =
+      data.role === "admin" ? "block" : "none";
+  }
 }
 
-/* POSTS */
-postBtn.onclick = async () => {
+/* =========================
+   LIVE STATUS
+========================= */
+async function setOnline() {
+  if (!currentProfile) return;
+
+  await supabase.from("profiles").update({
+    is_online: true,
+    last_seen: new Date().toISOString()
+  }).eq("id", currentProfile.id);
+}
+
+async function setOffline() {
+  if (!currentProfile) return;
+
+  await supabase.from("profiles").update({
+    is_online: false,
+    last_seen: new Date().toISOString()
+  }).eq("id", currentProfile.id);
+}
+
+function startHeartbeat() {
+  if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+  heartbeatInterval = setInterval(async () => {
+    if (!currentProfile) return;
+
+    await supabase.from("profiles").update({
+      last_seen: new Date().toISOString()
+    }).eq("id", currentProfile.id);
+  }, 120000); // every 2 minutes
+}
+
+/* Browser close / refresh */
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon(
+    "/api/offline",
+    JSON.stringify({ user: currentProfile?.id })
+  );
+});
+
+/* =========================
+   POSTS
+========================= */
+postBtn?.addEventListener("click", async () => {
   if (!postContent.value.trim()) return;
 
   await supabase.from("posts").insert({
@@ -72,21 +130,27 @@ postBtn.onclick = async () => {
 
   postContent.value = "";
   await loadFeed();
-};
+});
 
-/* FEED */
+/* =========================
+   FEED (WITH LIVE BADGE)
+========================= */
 async function loadFeed() {
   const { data } = await supabase
     .from("posts")
     .select(`
       id,
       content,
-      creator_id,
       created_at,
-      profiles ( role )
+      creator_id,
+      profiles (
+        display_name,
+        is_online
+      )
     `)
     .order("created_at", { ascending: false });
 
+  if (!feedDiv) return;
   feedDiv.innerHTML = "";
 
   if (!data || data.length === 0) {
@@ -98,8 +162,15 @@ async function loadFeed() {
     const card = document.createElement("div");
     card.className = "feed-card";
 
+    const liveBadge = post.profiles?.is_online
+      ? `<span style="color:#22c55e;font-weight:bold;">● LIVE</span>`
+      : `<span style="color:#888;">Offline</span>`;
+
     card.innerHTML = `
-      <strong>Creator</strong>
+      <div style="display:flex;justify-content:space-between;">
+        <strong>${post.profiles?.display_name || "Creator"}</strong>
+        ${liveBadge}
+      </div>
       <p>${post.content}</p>
       <button class="tip">Tip 10 Credits</button>
     `;
@@ -111,7 +182,9 @@ async function loadFeed() {
   });
 }
 
-/* TIPPING */
+/* =========================
+   TIPPING
+========================= */
 async function tipCreator(creatorId) {
   if (creatorId === currentProfile.id) {
     alert("You cannot tip yourself.");
@@ -147,10 +220,11 @@ async function tipCreator(creatorId) {
   alert("Tip sent.");
 }
 
-/* ADMIN */
-loadPostsBtn.onclick = async () => {
+/* =========================
+   ADMIN
+========================= */
+loadPostsBtn?.addEventListener("click", async () => {
   const { data } = await supabase.from("posts").select("*");
-
   adminPostsDiv.innerHTML = "";
 
   data.forEach(post => {
@@ -159,11 +233,13 @@ loadPostsBtn.onclick = async () => {
       <p>${post.content}</p>
       <button>Delete</button>
     `;
+
     div.querySelector("button").onclick = async () => {
       await supabase.from("posts").delete().eq("id", post.id);
       await loadFeed();
       loadPostsBtn.click();
     };
+
     adminPostsDiv.appendChild(div);
   });
-};
+});
