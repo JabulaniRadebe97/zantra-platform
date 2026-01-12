@@ -29,6 +29,8 @@ let currentProfile = null;
 logoutBtn.onclick = async () => {
   await supabase.auth.signOut();
   location.href = "/";
+  is_online = false;
+  last_seen= minute;
 };
 
 supabase.auth.onAuthStateChange(async (_, session) => {
@@ -52,6 +54,8 @@ async function loadProfile(userId) {
 
   userInfo.innerText =
     `Logged in | Role: ${data.role} | Credits: ${data.tokens}`;
+    is_online = true;
+    last_seen= minute;
 
   creatorPanel.style.display = data.role === "creator" ? "block" : "none";
   adminPanel.style.display = data.role === "admin" ? "block" : "none";
